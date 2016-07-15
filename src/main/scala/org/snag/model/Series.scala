@@ -18,12 +18,10 @@ object Series {
     implicit val jsonFormat = jsonFormat4(Config.apply)
   }
 
-  case class Metadata(title: String,
-                      description: Option[String] = None,
-                      bannerUrl: Option[String] = None)
+  case class Metadata(title: String)
 
   object Metadata {
-    implicit val jsonFormat = jsonFormat3(Metadata.apply)
+    implicit val jsonFormat = jsonFormat1(Metadata.apply)
   }
 
   sealed trait Event

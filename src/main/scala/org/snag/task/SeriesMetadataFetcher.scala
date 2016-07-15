@@ -12,7 +12,7 @@ class SeriesMetadataFetcher(thetvdb: TheTVDB)(implicit ec: ExecutionContext) {
   def fetchMetadata(series: Series): Unit =
     thetvdb.fetchSeriesInfo(series.id) onComplete {
       case Success(rawInfo) =>
-        val cookedInfo = Series.Metadata(rawInfo.seriesName, Some(rawInfo.overview), Some(rawInfo.banner))
+        val cookedInfo = Series.Metadata(rawInfo.seriesName)
         series.metadata.set(cookedInfo)
         log.warn(s"loaded series metadata for ${series}")
       case Failure(ex) =>
