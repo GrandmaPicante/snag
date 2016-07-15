@@ -31,4 +31,6 @@ import TorrentSearch._
 
 class TorrentSearch[PARENT](parent: PARENT, id: Int, dir: File) {
   val data = new FileBackedValue[Data](dir / "data.json", Data.jsonFormat)
+
+  val downloads = new DirectoryBackedMap(dir / "downloads")(new TorrentDownload[TorrentSearch[PARENT]](this, _, _))
 }

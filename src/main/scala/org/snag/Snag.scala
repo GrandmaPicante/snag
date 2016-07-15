@@ -4,6 +4,7 @@ import java.io.File
 import akka.actor.{Props, ActorSystem}
 import akka.io.IO
 import org.snag.model._
+import org.snag.task.MovieSearcher.SearchComplete
 import org.snag.task._
 import org.snag.service.{TheMovieDB, TheTVDB, TorrentDay}
 import org.snag.tv.{MovieInstaller, MissingEpisoder, EpisodeInstaller}
@@ -60,6 +61,11 @@ object Snag {
 
     missingMediaDetector.events foreach { mmd =>
       val ms = new MovieSearcher(mmd.movie, torrentDay)
+      ms.events foreach {
+        case MovieSearcher.SearchComplete(s) =>
+          val td = new TorrentDownloader(s)
+          td.go() // This looks like it should be an lambda, but it's pretty complex for anonymity.
+      }
       ms.search()
     }
 

@@ -5,20 +5,17 @@ import FileUtils._
 import spray.json.DefaultJsonProtocol._
 
 object TorrentDownload {
+  // Eventually, this could contain data about why this particular torrent was chosen from all of those available
+  // after the search.  This will allow for debugging.
+  case class Data(chosenTorrentIndex: Int)
 
-  case class Config(terms: String)
-
-  object Config {
-    implicit val jsonFormat = jsonFormat1(Config.apply)
+  object Data {
+    implicit val jsonFormat = jsonFormat1(Data.apply)
   }
-
 }
 
 import TorrentDownload._
 
-class TorrentDownload[PARENT](parent: PARENT, id: Int, dir: File) {
-  private[this] val myConfig = new FileBackedValue(dir / "config.json", Config.jsonFormat)
-
-  def config = myConfig.get
-  def config_=(in: Config) = myConfig.set(in)
+class TorrentDownload[PARENT](parent: PARENT, id: Int, val dir: File) {
+  val data = new FileBackedValue(dir / "config.json", Data.jsonFormat)
 }

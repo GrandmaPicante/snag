@@ -4,11 +4,24 @@ import org.joda.time.{DateTime, Interval}
 import org.snag.Logging.log
 import org.snag.model.{Movie, TorrentSearch}
 import org.snag.service.TorrentDay
+import rx.lang.scala.Observable
+import rx.lang.scala.subjects.PublishSubject
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
+object MovieSearcher {
+  sealed trait Event
+  case class SearchComplete(search: TorrentSearch[Movie]) extends Event
+}
+
+import MovieSearcher._
+
 class MovieSearcher(movie: Movie, torrentDay: TorrentDay)(implicit ec: ExecutionContext) {
+
+  private[this] val subject = PublishSubject[Event]
+  val events: Observable[Event] = subject
+
 
   def search() = {
     // Iterate through the existing searches to see if there's anything that should be resumed.  Otherwise, we'll
@@ -21,10 +34,12 @@ class MovieSearcher(movie: Movie, torrentDay: TorrentDay)(implicit ec: Execution
     // Minimum time before performing the same search again (and assuming the results may be different)
     val minSearchInterval = 4 hours
 
+    val quality = "720p" // TODO: this should come from the configuration of the movie rather than hard-coded
+
     val searchQueries = Seq(
       movie.metadata.get.toList flatMap { md =>
         Seq(
-          s"${md.title} ${md.yearReleased}",
+          s"${md.title} ${md.yearReleased} $quality",
           md.title
         ) ++ ( md.alternateTitles.toList flatMap { at =>
           Seq(
@@ -70,6 +85,8 @@ class MovieSearcher(movie: Movie, torrentDay: TorrentDay)(implicit ec: Execution
           val data = TorrentSearch.Data(q, now, hitList)
           val ms = movie.searches.createNext()
           ms.data.set(data)
+
+          subject.onNext(SearchComplete(ms))
         }
 
       case None =>
