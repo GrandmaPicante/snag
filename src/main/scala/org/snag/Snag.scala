@@ -4,9 +4,8 @@ import java.io.File
 import akka.actor.{Props, ActorSystem}
 import akka.io.IO
 import org.snag.model._
-import org.snag.task.{EpisodeSearcher, MetadataFetcher}
-import org.snag.service.TorrentDay
-import org.snag.service.thetvdb.TheTVDB
+import org.snag.task.{MovieMetadataFetcher, EpisodeSearcher, SeriesMetadataFetcher}
+import org.snag.service.{TheMovieDB, TheTVDB, TorrentDay}
 import org.snag.tv.{MissingEpisoder, EpisodeInstaller}
 import spray.can.Http
 import Logging.log
@@ -32,7 +31,11 @@ object Snag {
 
   val thetvdb = new TheTVDB(config.theTvDb)
 
-  val metadataFetcher = new MetadataFetcher(thetvdb)
+  val themoviedb = new TheMovieDB(config.theMovieDb)
+
+  val seriesMetadataFetcher = new SeriesMetadataFetcher(thetvdb)
+
+  val movieMetadataFetcher = new MovieMetadataFetcher(themoviedb)
 
   val installer = new EpisodeInstaller(new File("target/media_library"))
 
@@ -40,7 +43,7 @@ object Snag {
 
   val universe = new MediaUniverse(home)
 
-  val dataBucket = new DataBucket(universe, metadataFetcher, torrentDay, thetvdb)
+  val dataBucket = new DataBucket(universe, seriesMetadataFetcher, torrentDay, thetvdb)
 
   def main(args:Array[String]) {
 
@@ -68,15 +71,26 @@ object Snag {
         case _ => // NOOP
       }
 
-    def onSeriesInstantiated(series: Series) = {
+    def onSeriesInstantiated(series: Series) =
       series.events foreach {
         case Series.SeasonInstantiated(season) =>
           log.debug(s"season instantiated: $season")
           onSeasonInstantiated(season)
         case Series.ConfigChanged(cfg) =>
           log.debug(s"series configuration updated: $cfg")
-          metadataFetcher.fetchMetadata(series)
-          metadataFetcher.fetchEpisodes(series)
+          seriesMetadataFetcher.fetchMetadata(series)
+          seriesMetadataFetcher.fetchEpisodes(series)
+        case _ => // NOOP
+      }
+
+    def onMovieInstantiated(movie: Movie) = {
+      movieMetadataFetcher.fetchMetadata(movie)
+
+      movie.events foreach {
+        case Movie.ConfigChanged(movie) =>
+          // trigger a new search here (maybe, if quality changed, etc.)
+        case Movie.MetadataChanged(movie) =>
+          // trigger a new search here (maybe, if name/year changed, etc.)
         case _ => // NOOP
       }
     }
@@ -85,7 +99,9 @@ object Snag {
       case MediaUniverse.SeriesInstantiated(series) =>
         log.debug(s"series instantiated: $series")
         onSeriesInstantiated(series)
-      case _ => // NOOP
+      case MediaUniverse.MovieInstantiated(movie) =>
+        log.debug(s"movie instantiated: $movie")
+        onMovieInstantiated(movie)
     }
 
 

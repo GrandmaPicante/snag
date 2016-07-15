@@ -1,13 +1,15 @@
-package org.snag.service.thetvdb
+package org.snag.service
 
 import akka.actor.ActorSystem
 import org.snag.{Configuration, HttpClient}
 import spray.client.pipelining._
 import spray.http.Uri.Query
 import spray.http._
-import spray.httpx.UnsuccessfulResponseException
-import spray.json._
 import spray.httpx.SprayJsonSupport._
+import spray.httpx.UnsuccessfulResponseException
+import spray.json.DefaultJsonProtocol._
+import spray.json.{JsObject, JsonFormat}
+
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 
@@ -18,7 +20,7 @@ case class Page[T](links: Links = Links(), data: List[T] = List.empty)
 case class SeriesInfo(seriesId: String, seriesName: String, banner: String, status: String, overview: String)
 case class EpisodeInfo(airedSeason: Int, airedEpisodeNumber: Int, firstAired: Option[String], episodeName: Option[String])
 
-object JsonObjects extends DefaultJsonProtocol {
+object TheTVDB {
   implicit val AuthenticationInfoFormat = jsonFormat2(AuthenticationInfo)
   implicit val TokenFormat = jsonFormat1(Token)
   implicit val SeriesInfoFormat = jsonFormat5(SeriesInfo)
@@ -27,7 +29,7 @@ object JsonObjects extends DefaultJsonProtocol {
   implicit def PageFormat[T :JsonFormat] = jsonFormat2(Page[T])
 }
 
-import JsonObjects._
+import TheTVDB._
 
 class TheTVDB(cfg: Configuration.TheTVDB)(implicit ac: ActorSystem) extends HttpClient {
   override val actorSystem = ac

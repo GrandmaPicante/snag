@@ -1,6 +1,6 @@
 package org.snag
 
-import org.snag.model.{Episode, Series}
+import org.snag.model.{Movie, Episode, Series}
 import spray.http.StatusCodes
 import spray.routing.directives.OnSuccessFutureMagnet
 import spray.routing.{Directive1, Route, HttpServiceActor}
@@ -57,6 +57,37 @@ class Routes(dataBucket: DataBucket) extends HttpServiceActor {
                       }
                     }
                   }
+                }
+              }
+            }
+          }
+        }
+      } ~
+      pathPrefix("movie") {
+        pathPrefix(IntNumber) { movieId =>
+          pathEnd {
+            put {
+              entity(as[Movie.Config]) { mc =>
+                provide(dataBucket.universe.movies.getOrCreate(movieId)) { movie =>
+                  complete {
+                    movie.config.set(mc)
+                    StatusCodes.NoContent
+                  }
+                }
+              }
+            }
+          } ~
+          ifDefined( dataBucket.universe.movies.get(movieId) ) { movie =>
+            pathEnd {
+              get {
+                complete {
+                  movie.config.get
+                }
+              } ~
+              delete {
+                complete {
+                  dataBucket.universe.movies.delete(movieId)
+                  StatusCodes.NoContent
                 }
               }
             }

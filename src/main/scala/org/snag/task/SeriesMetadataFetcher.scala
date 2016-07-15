@@ -1,12 +1,12 @@
 package org.snag.task
 
 import org.snag.model.{Episode, Series}
-import org.snag.service.thetvdb.TheTVDB
+import org.snag.service.TheTVDB
 import scala.concurrent.{Promise, Future, ExecutionContext}
 import scala.util.{Failure, Success}
 import org.snag.Logging.log
 
-class MetadataFetcher(thetvdb: TheTVDB)(implicit ec: ExecutionContext) {
+class SeriesMetadataFetcher(thetvdb: TheTVDB)(implicit ec: ExecutionContext) {
   // TODO: Don't sync things that don't need to be synced (eventually)
 
   def fetchMetadata(series: Series): Unit =

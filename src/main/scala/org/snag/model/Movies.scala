@@ -1,6 +1,7 @@
 package org.snag.model
 
 import java.io.File
+import java.time.LocalDate
 import org.snag.model.DirectoryBackedMap.ItemInstantiated
 import org.snag.model.FileBackedValue.Update
 import rx.lang.scala.Observable
@@ -17,11 +18,12 @@ object Movie {
   }
 
   case class Metadata(title: String,
-                      description: Option[String] = None,
-                      bannerUrl: Option[String] = None)
+                      alternateTitles: Set[String],
+                      yearReleased: Int,
+                      runtimeMinutes: Int)
 
   object Metadata {
-    implicit val jsonFormat = jsonFormat3(Metadata.apply)
+    implicit val jsonFormat = jsonFormat4(Metadata.apply)
   }
 
   sealed trait Event
