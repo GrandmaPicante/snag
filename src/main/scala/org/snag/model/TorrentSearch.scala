@@ -30,5 +30,5 @@ object TorrentSearch {
 import TorrentSearch._
 
 class TorrentSearch[PARENT](parent: PARENT, id: Int, dir: File) {
-  val data = new FileBackedValue(dir / "data.json", Data.jsonFormat)
+  val data = new FileBackedValue[Data](dir / "data.json", Data.jsonFormat)
 }

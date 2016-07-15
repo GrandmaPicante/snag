@@ -4,9 +4,9 @@ import java.io.File
 import akka.actor.{Props, ActorSystem}
 import akka.io.IO
 import org.snag.model._
-import org.snag.task.{MovieMetadataFetcher, EpisodeSearcher, SeriesMetadataFetcher}
+import org.snag.task._
 import org.snag.service.{TheMovieDB, TheTVDB, TorrentDay}
-import org.snag.tv.{MissingEpisoder, EpisodeInstaller}
+import org.snag.tv.{MovieInstaller, MissingEpisoder, EpisodeInstaller}
 import spray.can.Http
 import Logging.log
 import FileUtils._
@@ -37,9 +37,15 @@ object Snag {
 
   val movieMetadataFetcher = new MovieMetadataFetcher(themoviedb)
 
-  val installer = new EpisodeInstaller(new File("target/media_library"))
+  val mediaLibrary = new File("target/media_library")
 
-  val missingEpisoder = new MissingEpisoder(installer)
+  val episodeInstaller = new EpisodeInstaller(mediaLibrary / "tv")
+
+  val movieInstaller = new MovieInstaller(mediaLibrary / "movies")
+
+  val missingEpisoder = new MissingEpisoder(episodeInstaller)
+
+  val missingMediaDetector = new MissingMediaDetector(movieInstaller)
 
   val universe = new MediaUniverse(home)
 
@@ -50,6 +56,11 @@ object Snag {
     missingEpisoder.events foreach { med =>
       val es = new EpisodeSearcher(med.episode, torrentDay)
       es.search()
+    }
+
+    missingMediaDetector.events foreach { mmd =>
+      val ms = new MovieSearcher(mmd.movie, torrentDay)
+      ms.search()
     }
 
     def onEpisodeInstantiated(episode: Episode) = {
@@ -84,13 +95,15 @@ object Snag {
       }
 
     def onMovieInstantiated(movie: Movie) = {
-      movieMetadataFetcher.fetchMetadata(movie)
+      movieMetadataFetcher.updateMetadata(movie)
 
       movie.events foreach {
         case Movie.ConfigChanged(movie) =>
           // trigger a new search here (maybe, if quality changed, etc.)
+          missingMediaDetector.check(movie)
         case Movie.MetadataChanged(movie) =>
           // trigger a new search here (maybe, if name/year changed, etc.)
+          missingMediaDetector.check(movie)
         case _ => // NOOP
       }
     }

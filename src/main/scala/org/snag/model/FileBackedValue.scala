@@ -28,6 +28,8 @@ class FileBackedValue[T](file: File, jsonFormat: RootJsonFormat[T]) {
 
   val events: Observable[Event[T]] = subject
 
+  def lastUpdatedAt = file.lastModified()
+
   private[this] var value: Option[T] =
     if ( file.exists ) {
       val json = JsonParser(ParserInput(Source.fromFile(file).mkString))
