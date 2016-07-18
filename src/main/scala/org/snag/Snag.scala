@@ -63,7 +63,7 @@ object Snag {
       val ms = new MovieSearcher(mmd.movie, torrentDay)
       ms.events foreach {
         case MovieSearcher.SearchComplete(s) =>
-          val td = new TorrentDownloader(s)
+          val td = new TorrentDownloader(s, torrentDay)
           td.go() // This looks like it should be an lambda, but it's pretty complex for anonymity.
       }
       ms.search()

@@ -1,10 +1,11 @@
 package org.snag.service
 
-import java.io.ByteArrayInputStream
+import java.io.{File, FileOutputStream, ByteArrayInputStream}
 
 import akka.actor.ActorSystem
 import com.sun.org.apache.xalan.internal.xsltc.trax.SAX2DOM
 import org.ccil.cowan.tagsoup.Parser
+import org.snag.Logging._
 import org.snag.{Configuration, HttpClient}
 import org.w3c.dom.{Document, Element, Node, NodeList}
 import org.xml.sax.InputSource
@@ -12,6 +13,7 @@ import spray.client.pipelining._
 import spray.http._
 
 import scala.concurrent.Future
+import scala.util.{Failure, Success}
 
 object TorrentDay {
   case class TorrentInfo(id: Long, title: String, url: String, sizeKilobytes: Int, ageMinutes: Int, seeders: Int, leechers: Int)
@@ -76,6 +78,34 @@ class TorrentDay(cfg: Configuration.TorrentDay)(implicit ac: ActorSystem) extend
 
 
       torrentInfos
+    }
+  }
+
+  def fetch(torrent: TorrentInfo, file: File): Unit = {
+    // Download the actual torrent file and store it into the specified file.
+    val uri = "https://www.torrentday.com/" + torrent.url
+
+    log.debug(s"Downloading $uri")
+
+    val response = http(
+      Get(uri).withHeaders(
+        HttpHeaders.Cookie(HttpCookie("uid",cfg.uid),HttpCookie("pass",cfg.pass))
+      )
+    )
+
+    response onComplete {
+      case Success(rsp) =>
+        // We'll want a way to do this with a stream probably to avoid buffering into memory.
+        val torrentContent = rsp.entity.data.toByteArray
+        val outs = new FileOutputStream(file)
+        try {
+          outs.write(torrentContent)
+        } finally {
+          outs.close()
+        }
+
+      case Failure(ex) =>
+        log.error(ex)
     }
   }
 
