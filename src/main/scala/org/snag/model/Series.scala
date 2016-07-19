@@ -1,6 +1,7 @@
 package org.snag.model
 
 import java.io.File
+import java.time.LocalDate
 import org.snag.model.DirectoryBackedMap.ItemInstantiated
 import org.snag.model.FileBackedValue.Update
 import rx.lang.scala.Observable
@@ -18,10 +19,16 @@ object Series {
     implicit val jsonFormat = jsonFormat4(Config.apply)
   }
 
-  case class Metadata(title: String)
+  case class Metadata(title: String,
+                      originalTitle: String,
+                      seasonCount: Int,
+                      firstAired: LocalDate,
+                      lastAired: LocalDate,
+                      ended: Boolean)
 
   object Metadata {
-    implicit val jsonFormat = jsonFormat1(Metadata.apply)
+    import org.snag.service.TheMovieDB.LocalDateFormat
+    implicit val jsonFormat = jsonFormat6(Metadata.apply)
   }
 
   sealed trait Event

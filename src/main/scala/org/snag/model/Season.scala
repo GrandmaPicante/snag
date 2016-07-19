@@ -14,6 +14,12 @@ object Season {
     implicit val jsonFormat = jsonFormat1(Config.apply)
   }
 
+  case class Metadata(episodeCount: Int)
+
+  object Metadata {
+    implicit val jsonFormat = jsonFormat1(Metadata.apply)
+  }
+
   sealed trait Event
   case class ConfigChanged(episode: Season) extends Event
   case class EpisodeInstantiated(search: Episode) extends Event
@@ -25,6 +31,7 @@ import Season._
 
 class Season private[model] (val series: Series, val id: Int, dir: File) {
   val config = new FileBackedValue(dir / "config.json", Config.jsonFormat)
+  val metadata = new FileBackedValue(dir / "metadata.json", Metadata.jsonFormat)
 
   val episodes = new DirectoryBackedMap[Episode](dir / "episode")(new Episode(this, _, _) )
   val searches = new DirectoryBackedMap(dir / "search")(new TorrentSearch(this, _, _))

@@ -4,10 +4,9 @@ import java.io.File
 import akka.actor.{Props, ActorSystem}
 import akka.io.IO
 import org.snag.model._
-import org.snag.task.MovieSearcher.SearchComplete
 import org.snag.task._
 import org.snag.service.{TheMovieDB, TheTVDB, TorrentDay}
-import org.snag.tv.{MovieInstaller, MissingEpisoder, EpisodeInstaller}
+import org.snag.tv.{EpisodeInstaller, MovieInstaller, MediaInstaller}
 import spray.can.Http
 import Logging.log
 import FileUtils._
@@ -44,16 +43,16 @@ object Snag {
 
   val movieInstaller = new MovieInstaller(mediaLibrary / "movies")
 
-  val missingEpisoder = new MissingEpisoder(episodeInstaller)
+//  val missingEpisoder = new MissingEpisoder(episodeInstaller)
 
   val missingMediaDetector = new MissingMediaDetector(movieInstaller)
 
   val universe = new MediaUniverse(home)
 
-  val dataBucket = new DataBucket(universe, seriesMetadataFetcher, torrentDay, thetvdb)
+  val dataBucket = new DataBucket(universe, seriesMetadataFetcher, torrentDay, themoviedb)
 
   def main(args:Array[String]) {
-
+/*
     missingEpisoder.events foreach { med =>
       val es = new EpisodeSearcher(med.episode, torrentDay)
       es.search()
@@ -122,7 +121,7 @@ object Snag {
         log.debug(s"movie instantiated: $movie")
         onMovieInstantiated(movie)
     }
-
+*/
 
     val routes = actorSystem.actorOf(Props(classOf[Routes],dataBucket))
 

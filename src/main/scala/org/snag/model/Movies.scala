@@ -19,10 +19,11 @@ object Movie {
 
   case class Metadata(title: String,
                       alternateTitles: Set[String],
-                      yearReleased: Int,
+                      yearReleased: LocalDate,
                       runtimeMinutes: Int)
 
   object Metadata {
+    import org.snag.service.TheMovieDB.LocalDateFormat
     implicit val jsonFormat = jsonFormat4(Metadata.apply)
   }
 

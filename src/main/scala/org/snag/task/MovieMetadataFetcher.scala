@@ -30,7 +30,7 @@ class MovieMetadataFetcher(theMovieDB: TheMovieDB)(implicit ec: ExecutionContext
         val cookedInfo = Movie.Metadata(
           title = rawInfo.title,
           alternateTitles = Set(rawInfo.original_title) - rawInfo.title,
-          yearReleased = rawInfo.release_date.split('-').head.toInt,
+          yearReleased = rawInfo.release_date,
           runtimeMinutes = rawInfo.runtime
         )
         movie.metadata.set(cookedInfo)

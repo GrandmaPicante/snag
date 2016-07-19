@@ -1,6 +1,7 @@
 package org.snag
 
 import org.snag.model.{Movie, Episode, Series}
+import org.snag.task.Wanter
 import spray.http.StatusCodes
 import spray.routing.directives.OnSuccessFutureMagnet
 import spray.routing.{Directive1, Route, HttpServiceActor}
@@ -12,8 +13,18 @@ import scala.concurrent.Future
 class Routes(dataBucket: DataBucket) extends HttpServiceActor {
   implicit val ec = actorRefFactory.dispatcher
 
+  private[this] val wanter = new Wanter(dataBucket.theMovieDB)
+
   override def receive = runRoute {
     pathPrefix("api" / "v1" ) {
+      path("update") {
+        get {
+          complete {
+            dataBucket.universe.tv.items.values.foreach(wanter.snag)
+            StatusCodes.NoContent
+          }
+        }
+      } ~
       pathPrefix("series") {
         pathPrefix(IntNumber) { seriesId =>
           pathEnd {

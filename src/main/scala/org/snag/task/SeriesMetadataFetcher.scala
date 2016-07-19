@@ -8,7 +8,7 @@ import org.snag.Logging.log
 
 class SeriesMetadataFetcher(thetvdb: TheTVDB)(implicit ec: ExecutionContext) {
   // TODO: Don't sync things that don't need to be synced (eventually)
-
+/*
   def fetchMetadata(series: Series): Unit =
     thetvdb.fetchSeriesInfo(series.id) onComplete {
       case Success(rawInfo) =>
@@ -45,4 +45,5 @@ class SeriesMetadataFetcher(thetvdb: TheTVDB)(implicit ec: ExecutionContext) {
         }
       }
     }
+    */
 }
