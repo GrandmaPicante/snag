@@ -1,15 +1,18 @@
 package org.snag
 
 import java.io.File
-import akka.actor.{Props, ActorSystem}
+
+import akka.actor.{ActorSystem, Props}
 import akka.io.IO
 import org.snag.model._
 import org.snag.task._
 import org.snag.service.{TheMovieDB, TheTVDB, TorrentDay}
-import org.snag.tv.{EpisodeInstaller, MovieInstaller, MediaInstaller}
+import org.snag.tv.{EpisodeInstaller, MediaInstaller, MovieInstaller}
 import spray.can.Http
 import Logging.log
 import FileUtils._
+import com.typesafe.config.ConfigFactory
+import org.snag.torrent.Torrenter
 
 object Snag {
 
@@ -49,7 +52,9 @@ object Snag {
 
   val universe = new MediaUniverse(home)
 
-  val dataBucket = new DataBucket(universe, seriesMetadataFetcher, torrentDay, themoviedb)
+  val torrenter = new Torrenter(config.torrenter, home / "torrents")
+
+  val dataBucket = new DataBucket(universe, torrenter, seriesMetadataFetcher, torrentDay, themoviedb, home)
 
   def main(args:Array[String]) {
 /*

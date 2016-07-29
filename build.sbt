@@ -25,7 +25,8 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % "2.4.7",
   "com.typesafe.akka" %% "akka-slf4j" % "2.4.7",
   "org.scalawag.timber" %% "timber-backend" % "0.6.0-SNAPSHOT",
-  "org.scalawag.timber" %% "slf4j-over-timber" % "0.6.0-SNAPSHOT"
+  "org.scalawag.timber" %% "slf4j-over-timber" % "0.6.0-SNAPSHOT",
+  "commons-codec" % "commons-codec" % "1.10"
 // https://github.com/edmund-wagner/junrar
 )
 

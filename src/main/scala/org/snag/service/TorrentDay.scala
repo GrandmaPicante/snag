@@ -11,11 +11,16 @@ import org.w3c.dom.{Document, Element, Node, NodeList}
 import org.xml.sax.InputSource
 import spray.client.pipelining._
 import spray.http._
+import spray.json.DefaultJsonProtocol._
+import spray.json.{JsString, JsValue, RootJsonFormat}
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
 object TorrentDay {
+  object TorrentInfo {
+    implicit val jsonFormat = jsonFormat7(TorrentInfo.apply)
+  }
   case class TorrentInfo(id: Long, title: String, url: String, sizeKilobytes: Int, ageMinutes: Int, seeders: Int, leechers: Int)
 }
 
@@ -81,7 +86,7 @@ class TorrentDay(cfg: Configuration.TorrentDay)(implicit ac: ActorSystem) extend
     }
   }
 
-  def fetch(torrent: TorrentInfo, file: File): Unit = {
+  def fetch(torrent: TorrentInfo, file: File): Future[Unit] = {
     // Download the actual torrent file and store it into the specified file.
     val uri = "https://www.torrentday.com/" + torrent.url
 
@@ -93,19 +98,17 @@ class TorrentDay(cfg: Configuration.TorrentDay)(implicit ac: ActorSystem) extend
       )
     )
 
-    response onComplete {
-      case Success(rsp) =>
-        // We'll want a way to do this with a stream probably to avoid buffering into memory.
-        val torrentContent = rsp.entity.data.toByteArray
-        val outs = new FileOutputStream(file)
-        try {
-          outs.write(torrentContent)
-        } finally {
-          outs.close()
-        }
-
-      case Failure(ex) =>
-        log.error(ex)
+    response map { rsp =>
+      // We'll want a way to do this with a stream probably to avoid buffering into memory.
+      val torrentContent = rsp.entity.data.toByteArray
+      val outs = new FileOutputStream(file)
+      try {
+        outs.write(torrentContent)
+      } finally {
+        outs.close()
+      }
+    } recover {
+      case ex:Exception => log.error(ex)
     }
   }
 

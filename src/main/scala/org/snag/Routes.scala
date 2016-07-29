@@ -1,14 +1,17 @@
 package org.snag
 
-import org.snag.model.{Movie, Episode, Series}
+import org.snag.model.{Episode, Movie, Series}
 import org.snag.task.Wanter
 import spray.http.StatusCodes
 import spray.routing.directives.OnSuccessFutureMagnet
-import spray.routing.{Directive1, Route, HttpServiceActor}
+import spray.routing.{Directive1, HttpServiceActor, Route}
 import spray.httpx.SprayJsonSupport._
 import org.snag.Logging.log
+import org.snag.service.TorrentDay.TorrentInfo
+import org.snag.model.FileUtils._
 
 import scala.concurrent.Future
+import scala.util.{Failure, Success}
 
 class Routes(dataBucket: DataBucket) extends HttpServiceActor {
   implicit val ec = actorRefFactory.dispatcher
@@ -22,6 +25,26 @@ class Routes(dataBucket: DataBucket) extends HttpServiceActor {
           complete {
             dataBucket.universe.tv.items.values.foreach(wanter.snag)
             StatusCodes.NoContent
+          }
+        }
+      } ~
+      path("download") {
+        // TODO This is a temporary endpoint to directly drive the Torrenter
+        post {
+          entity(as[TorrentInfo]) { info =>
+            complete {
+              val tempFile = dataBucket.homeDir / "temp" / info.id.toString
+              mkdir(tempFile.getParentFile)
+              tempFile.createNewFile
+              dataBucket.torrentDay.fetch(info, tempFile) onComplete {
+                case Success(_) => {
+                  val torrent = dataBucket.torrenter.download(info, tempFile)
+                  log.info(s"Download of torrent (${info.url}) resulted in id (${torrent.id})")
+                }
+                case Failure(ex) => log.error(s"Torrent download failed (${info.url}): $ex")
+              }
+              StatusCodes.NoContent
+            }
           }
         }
       } ~

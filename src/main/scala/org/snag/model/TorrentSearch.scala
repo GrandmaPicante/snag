@@ -21,7 +21,6 @@ object TorrentSearch {
         case x => throw new IllegalArgumentException(s"invalid DateTime: $x")
       }
     }
-    implicit val torrentInfoFormat = jsonFormat7(TorrentInfo.apply)
     implicit val jsonFormat = jsonFormat3(Data.apply)
   }
 
