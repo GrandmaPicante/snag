@@ -17,7 +17,7 @@ object Torrenter {
 class Torrenter(clientConfig: ClientConfig, dir: File) {
   mkdir(dir)
 
-  def download(info: TorrentInfo, sourceTorrentFile: File):Torrent = {
+  def download(info: TorrentInfo, expectedContent:Seq[String], sourceTorrentFile: File):Torrent = {
     val torrentId = {
       val messageDigest = MessageDigest.getInstance("SHA-1")
       val is = new BufferedInputStream(new FileInputStream(sourceTorrentFile))
@@ -29,7 +29,7 @@ class Torrenter(clientConfig: ClientConfig, dir: File) {
       Hex.encodeHexString(messageDigest.digest)
     }
 
-    val torrent = new Torrent(torrentId, info, sourceTorrentFile, dir / torrentId, getClient(clientConfig))
+    val torrent = new Torrent(torrentId, info, expectedContent:Seq[String], sourceTorrentFile, dir / torrentId, getClient(clientConfig))
     torrent.start
     torrent
   }

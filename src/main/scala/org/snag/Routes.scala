@@ -38,7 +38,7 @@ class Routes(dataBucket: DataBucket) extends HttpServiceActor {
               tempFile.createNewFile
               dataBucket.torrentDay.fetch(info, tempFile) onComplete {
                 case Success(_) => {
-                  val torrent = dataBucket.torrenter.download(info, tempFile)
+                  val torrent = dataBucket.torrenter.download(info, Seq(info.title), tempFile)
                   log.info(s"Download of torrent (${info.url}) resulted in id (${torrent.id})")
                 }
                 case Failure(ex) => log.error(s"Torrent download failed (${info.url}): $ex")

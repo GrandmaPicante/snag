@@ -16,16 +16,16 @@ object Torrent {
   case object Failed extends TorrentStatus
 
   object Metadata {
-    implicit val jsonFormat = jsonFormat1(Metadata.apply)
+    implicit val jsonFormat = jsonFormat2(Metadata.apply)
   }
-  case class Metadata(torrentInfo: TorrentInfo)
+  case class Metadata(torrentInfo: TorrentInfo, expectedContent:Seq[String])
 }
 
-class Torrent private[torrent] (val id: String, info: TorrentInfo, sourceTorrentFile: File, dir: File, getClient: (File, File) => Client) {
+class Torrent private[torrent] (val id: String, info: TorrentInfo, expectedContent:Seq[String], sourceTorrentFile: File, dir: File, getClient: (File, File) => Client) {
   import Torrent._
 
   val metadata = new FileBackedValue(dir / "metadata.json", Metadata.jsonFormat)
-  metadata.set(Metadata(info))
+  metadata.set(Metadata(info, expectedContent))
 
   private val destTorrentFile = dir / "torrent"
   Files.copy(sourceTorrentFile.toPath, destTorrentFile.toPath, StandardCopyOption.REPLACE_EXISTING)
