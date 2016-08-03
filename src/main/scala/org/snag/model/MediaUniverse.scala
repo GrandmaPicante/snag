@@ -14,8 +14,8 @@ object MediaUniverse {
 import MediaUniverse._
 
 class MediaUniverse(dir: File) {
-  val movies = new DirectoryBackedMap(dir / "movies")(new Movie(_, _))
-  val tv = new DirectoryBackedMap(dir / "tv")(new Series(_, _))
+  val movies = new DirectoryBackedMap[Int, Movie](dir / "movies")(new Movie(_, _))
+  val tv = new DirectoryBackedMap[Int, Series](dir / "tv")(new Series(_, _))
 
   val events: Observable[Event] = {
     val seriesEvents = tv.events map {

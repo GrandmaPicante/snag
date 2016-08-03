@@ -33,9 +33,9 @@ class Season private[model] (val series: Series, val id: Int, dir: File) {
   val config = new FileBackedValue(dir / "config.json", Config.jsonFormat)
   val metadata = new FileBackedValue(dir / "metadata.json", Metadata.jsonFormat)
 
-  val episodes = new DirectoryBackedMap[Episode](dir / "episode")(new Episode(this, _, _) )
-  val searches = new DirectoryBackedMap(dir / "search")(new TorrentSearch(this, _, _))
-  val downloads = new DirectoryBackedMap(dir / "download")(new TorrentDownload(this, _, _))
+  val episodes = new DirectoryBackedMap[Int, Episode](dir / "episode")(new Episode(this, _, _) )
+  val searches = new DirectoryBackedMap[Int, TorrentSearch[Season]](dir / "search")(new TorrentSearch(this, _, _))
+  val downloads = new DirectoryBackedMap[Int, TorrentDownload[Season]](dir / "download")(new TorrentDownload(this, _, _))
 
   val events: Observable[Event] = {
     val configEvents = config.events.map {

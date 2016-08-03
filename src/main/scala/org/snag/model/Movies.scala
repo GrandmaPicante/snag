@@ -40,8 +40,8 @@ class Movie private[model] (val id: Int, dir: File) {
   val metadata = new FileBackedValue(dir / "metadata.json", Metadata.jsonFormat)
   val config = new FileBackedValue(dir / "config.json", Config.jsonFormat)
 
-  val searches = new DirectoryBackedMap(dir / "search")(new TorrentSearch(this, _, _))
-  val downloads = new DirectoryBackedMap(dir / "download")(new TorrentDownload(this, _, _))
+  val searches = new SequentialDirectoryBackedMap[Int, TorrentSearch[Movie]](dir / "search")(new TorrentSearch(this, _, _))
+  val downloads = new DirectoryBackedMap[Int, TorrentDownload[Movie]](dir / "download")(new TorrentDownload(this, _, _))
 
   val events: Observable[Event] = {
     val configEvents = config.events.map {
