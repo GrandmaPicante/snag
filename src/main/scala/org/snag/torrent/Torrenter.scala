@@ -6,6 +6,7 @@ import java.security.MessageDigest
 
 import com.turn.ttorrent.client.{Client, SharedTorrent}
 import org.apache.commons.codec.binary.Hex
+import org.snag.model.DirectoryBackedMap
 import org.snag.model.FileUtils._
 import org.snag.service.TorrentDay.TorrentInfo
 import org.snag.torrent.Torrenter.ClientConfig
@@ -17,6 +18,20 @@ object Torrenter {
 class Torrenter(clientConfig: ClientConfig, dir: File) {
   mkdir(dir)
 
+  private val torrents = new DirectoryBackedMap[String, Torrent](dir)(new Torrent(_, _, getClient(clientConfig)))
+  // TODO Shouldn't start all torrents on instantiation.
+  // TODO Implement some limit on concurrent downloads.
+  getAll.foreach(_.start)
+
+  /**
+    * Adds a torrent and begins downloading.
+    * @param info TorrentInfo
+    * @param expectedContent A Sequence of Strings to store with the Torrent, each of which should identify a
+    *                        content item (media file) that is expected to result from successfully downloading
+    *                        and extracting the torrent.
+    * @param sourceTorrentFile The .torrent file representing this torrent.
+    * @return The new Torrent
+    */
   def download(info: TorrentInfo, expectedContent:Seq[String], sourceTorrentFile: File):Torrent = {
     val torrentId = {
       val messageDigest = MessageDigest.getInstance("SHA-1")
@@ -29,9 +44,39 @@ class Torrenter(clientConfig: ClientConfig, dir: File) {
       Hex.encodeHexString(messageDigest.digest)
     }
 
-    val torrent = new Torrent(torrentId, info, expectedContent:Seq[String], sourceTorrentFile, dir / torrentId, getClient(clientConfig))
+    val torrent:Torrent = torrents.getOrCreate(torrentId, new Torrent(_:String, _, info, expectedContent, sourceTorrentFile, getClient(clientConfig)))
     torrent.start
     torrent
+  }
+
+  /**
+    * Gets the torrent represented by the given id, if any.
+    * @param id The id
+    * @return An optional Torrent
+    */
+  def get(id:String):Option[Torrent] = {
+    torrents.get(id)
+  }
+
+  /**
+    * Gets all Torrents
+    * @return An Iterable of Torrents
+    */
+  def getAll:Iterable[Torrent] = {
+    torrents.items.values
+  }
+
+  /**
+    * Finds torrents with one or more expected content items that contain the given substring
+    * @param substring The substring to search for
+    * @return An Iterable of Torrents
+    */
+  def searchByExpectedContent(substring:String):Iterable[Torrent] = {
+    torrents.items.values filter { torrent =>
+      torrent.metadata.get exists { metadata =>
+        metadata.expectedContent.exists(_.contains(substring))
+      }
+    }
   }
 
   private[this] def getClient(clientConfig: ClientConfig)(torrentFile: File, dataDirectory: File):Client = {

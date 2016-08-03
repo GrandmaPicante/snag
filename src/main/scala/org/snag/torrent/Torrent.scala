@@ -8,6 +8,7 @@ import org.snag.model.FileBackedValue
 import org.snag.model.FileUtils._
 import org.snag.service.TorrentDay.TorrentInfo
 import spray.json.DefaultJsonProtocol._
+import spray.json._
 
 object Torrent {
   sealed trait TorrentStatus
@@ -19,18 +20,29 @@ object Torrent {
     implicit val jsonFormat = jsonFormat2(Metadata.apply)
   }
   case class Metadata(torrentInfo: TorrentInfo, expectedContent:Seq[String])
+
+  implicit object TorrentJsonFormat extends RootJsonWriter[Torrent] {
+    def write(torrent: Torrent) =
+      JsObject(List(
+        Some("id" -> JsString(torrent.id)),
+        Some("status" -> JsString(torrent.status.toString)),
+        torrent.metadata.get map { metadata => "metadata" -> metadata.toJson }
+      ).flatten: _*)
+  }
 }
 
-class Torrent private[torrent] (val id: String, info: TorrentInfo, expectedContent:Seq[String], sourceTorrentFile: File, dir: File, getClient: (File, File) => Client) {
+class Torrent private[torrent] (val id: String, dir: File, getClient:(File, File) => Client) {
   import Torrent._
 
   val metadata = new FileBackedValue(dir / "metadata.json", Metadata.jsonFormat)
-  metadata.set(Metadata(info, expectedContent))
+  private val torrentFile = dir / s"${id}.torrent"
+  lazy val client = getClient(torrentFile, mkdir(dir / "data"))
 
-  private val destTorrentFile = dir / "torrent"
-  Files.copy(sourceTorrentFile.toPath, destTorrentFile.toPath, StandardCopyOption.REPLACE_EXISTING)
-
-  val client = getClient(destTorrentFile, mkdir(dir / "data"))
+  def this(id: String, dir: File, info: TorrentInfo, expectedContent:Seq[String], sourceTorrentFile: File, getClient:(File, File) => Client) = {
+    this(id, dir, getClient)
+    metadata.set(Metadata(info, expectedContent))
+    Files.copy(sourceTorrentFile.toPath, torrentFile.toPath, StandardCopyOption.REPLACE_EXISTING)
+  }
 
   def status: TorrentStatus = {
     client.getState match {
