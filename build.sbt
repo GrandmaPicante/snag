@@ -30,5 +30,10 @@ libraryDependencies ++= Seq(
 // https://github.com/edmund-wagner/junrar
 )
 
+libraryDependencies ++= Seq (
+  "org.scalatest" %% "scalatest" % "3.0.0",
+  "org.scalamock" %% "scalamock-scalatest-support" % "3.2.2"
+) map ( _ % "test" )
+
 enablePlugins(JavaServerAppPackaging)
 
